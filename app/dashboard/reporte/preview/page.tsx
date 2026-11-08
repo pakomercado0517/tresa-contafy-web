@@ -37,6 +37,22 @@ function toNumber(value: number | string): number {
   return typeof value === "number" ? value : parseFloat(String(value)) || 0;
 }
 
+function sumExpenseRetenciones(expenses: Expense[] | null | undefined): {
+  retencionesIva: number;
+  retencionesIsr: number;
+} {
+  if (!expenses || expenses.length === 0) {
+    return { retencionesIva: 0, retencionesIsr: 0 };
+  }
+  return expenses.reduce(
+    (acc, exp) => ({
+      retencionesIva: acc.retencionesIva + toNumber(exp.retencion_iva_amount ?? 0),
+      retencionesIsr: acc.retencionesIsr + toNumber(exp.retencion_isr_amount ?? 0),
+    }),
+    { retencionesIva: 0, retencionesIsr: 0 }
+  );
+}
+
 function buildIngresosRows(
   invoices: Invoice[],
   profileRfc: string | undefined,
@@ -104,13 +120,26 @@ export default async function ReportePreviewPage({ searchParams }: PreviewPagePr
 
   let estadoPorRegimen: EstadoPorRegimen[] | undefined;
   if (regimenesClaves.length > 0) {
-    const metricsPorRegimen = await Promise.all(
-      regimenesClaves.map((clave) =>
-        getMetrics(profileId, mesValid, añoValid, clave)
-      )
-    );
+    const [metricsPorRegimen, expensesPorRegimen] = await Promise.all([
+      Promise.all(
+        regimenesClaves.map((clave) =>
+          getMetrics(profileId, mesValid, añoValid, clave)
+        )
+      ),
+      Promise.all(
+        regimenesClaves.map((clave) =>
+          getAllExpenses({
+            profileId,
+            mes: mesValid,
+            año: añoValid,
+            regimen_fiscal: clave,
+          })
+        )
+      ),
+    ]);
     estadoPorRegimen = regimenesClaves.map((clave, i) => {
       const m = metricsPorRegimen[i];
+      const retencionesEgresos = sumExpenseRetenciones(expensesPorRegimen[i] ?? []);
       const devengado = m?.devengado ?? {
         ingresos_devengados: 0,
         egresos_devengados: 0,
@@ -126,6 +155,8 @@ export default async function ReportePreviewPage({ searchParams }: PreviewPagePr
       const retIsr = imp.retenciones_isr?.devengado ?? imp.retenciones_isr?.cobrado ?? 0;
       const ivaTrasladado =
         imp.iva_trasladado?.devengado ?? imp.iva_trasladado?.cobrado ?? 0;
+      const ivaAcreditable =
+        imp.iva_acreditable?.devengado ?? imp.iva_acreditable?.pagado ?? 0;
       const nombreRegimen = catalogByClave.get(clave) ?? `Régimen ${clave}`;
       return {
         nombreRegimen,
@@ -134,6 +165,9 @@ export default async function ReportePreviewPage({ searchParams }: PreviewPagePr
         retencionesIva: retIva,
         retencionesIsr: retIsr,
         impuestoTrasladado: ivaTrasladado,
+        ivaAcreditable,
+        retencionesIvaEgresos: retencionesEgresos.retencionesIva,
+        retencionesIsrEgresos: retencionesEgresos.retencionesIsr,
         utilidadNeta: devengado.resultado_devengado ?? 0,
       };
     });
@@ -158,6 +192,14 @@ export default async function ReportePreviewPage({ searchParams }: PreviewPagePr
     }
   }
 
+  const impuestosGlobales = metrics.impuestos ?? {
+    iva_trasladado: {},
+    iva_acreditable: {},
+    retenciones_iva: {},
+    retenciones_isr: {},
+  };
+  const retencionesEgresosGlobales = sumExpenseRetenciones(expenses);
+
   const reportData: ReporteMensualData = {
     profileName: activeProfile?.nombre ?? "Todos los perfiles",
     rfc: profileRfc ?? "",
@@ -172,6 +214,24 @@ export default async function ReportePreviewPage({ searchParams }: PreviewPagePr
     ingresosDevengados: metrics.devengado?.ingresos_devengados ?? 0,
     egresosDevengados: metrics.devengado?.egresos_devengados ?? 0,
     utilidadOperativa: metrics.devengado?.resultado_devengado ?? 0,
+    retencionesIva:
+      impuestosGlobales.retenciones_iva?.devengado ??
+      impuestosGlobales.retenciones_iva?.cobrado ??
+      0,
+    retencionesIsr:
+      impuestosGlobales.retenciones_isr?.devengado ??
+      impuestosGlobales.retenciones_isr?.cobrado ??
+      0,
+    impuestoTrasladado:
+      impuestosGlobales.iva_trasladado?.devengado ??
+      impuestosGlobales.iva_trasladado?.cobrado ??
+      0,
+    ivaAcreditable:
+      impuestosGlobales.iva_acreditable?.devengado ??
+      impuestosGlobales.iva_acreditable?.pagado ??
+      0,
+    retencionesIvaEgresos: retencionesEgresosGlobales.retencionesIva,
+    retencionesIsrEgresos: retencionesEgresosGlobales.retencionesIsr,
     estadoPorRegimen,
     logoUrl: currentUser?.user?.logo_url ?? null,
     nombreComercial: currentUser?.user?.nombre_comercial ?? null,

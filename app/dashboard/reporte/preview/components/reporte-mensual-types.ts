@@ -23,6 +23,9 @@ export interface EstadoPorRegimen {
   retencionesIva: number;
   retencionesIsr: number;
   impuestoTrasladado: number;
+  ivaAcreditable: number;
+  retencionesIvaEgresos: number;
+  retencionesIsrEgresos: number;
   utilidadNeta: number;
 }
 
@@ -46,6 +49,12 @@ export interface ReporteMensualData {
   ingresosDevengados: number;
   egresosDevengados: number;
   utilidadOperativa: number;
+  retencionesIva: number;
+  retencionesIsr: number;
+  impuestoTrasladado: number;
+  ivaAcreditable: number;
+  retencionesIvaEgresos: number;
+  retencionesIsrEgresos: number;
   variacionIngresos?: number;
   variacionEgresos?: number;
   estadoPorRegimen?: EstadoPorRegimen[];

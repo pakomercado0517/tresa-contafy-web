@@ -3,11 +3,20 @@
 import { BarChart3 } from 'lucide-react';
 import type { ReporteMensualData } from './reporte-mensual-types';
 import { formatReporteCurrency } from './reporte-mensual-format';
+import { ReporteImpuestosIngresosEgresosGrid } from './ReporteImpuestosIngresosEgresosGrid';
 
 interface ReporteMensualEstadoDevengadoSectionProps {
   data: Pick<
     ReporteMensualData,
-    'ingresosDevengados' | 'egresosDevengados' | 'utilidadOperativa'
+    | 'ingresosDevengados'
+    | 'egresosDevengados'
+    | 'utilidadOperativa'
+    | 'retencionesIva'
+    | 'retencionesIsr'
+    | 'impuestoTrasladado'
+    | 'ivaAcreditable'
+    | 'retencionesIvaEgresos'
+    | 'retencionesIsrEgresos'
   >;
   margen: number;
 }
@@ -27,24 +36,28 @@ export function ReporteMensualEstadoDevengadoSection({
           Basado en fecha de emisión CFDI
         </span>
       </div>
-      <div className="mt-4 space-y-2 rounded-lg border border-gray-200 bg-gray-50/50 p-4">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Ingresos devengados (ventas totales)</span>
-          <span className="font-medium text-gray-900">
-            {formatReporteCurrency(data.ingresosDevengados)}
-          </span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Egresos devengados (costos y gastos)</span>
-          <span className="font-medium text-gray-900">
-            ({formatReporteCurrency(data.egresosDevengados)})
-          </span>
-        </div>
+      <div className="mt-4 space-y-3 rounded-lg border border-gray-200 bg-gray-50/50 p-4">
+        <ReporteImpuestosIngresosEgresosGrid
+          ingresos={{
+            total: data.ingresosDevengados ?? 0,
+            totalLabel: 'Ingresos devengados (ventas totales)',
+            impuestoTrasladado: data.impuestoTrasladado ?? 0,
+            retencionesIva: data.retencionesIva ?? 0,
+            retencionesIsr: data.retencionesIsr ?? 0,
+          }}
+          egresos={{
+            total: data.egresosDevengados ?? 0,
+            totalLabel: 'Egresos devengados (costos y gastos)',
+            ivaAcreditable: data.ivaAcreditable ?? 0,
+            retencionesIva: data.retencionesIvaEgresos ?? 0,
+            retencionesIsr: data.retencionesIsrEgresos ?? 0,
+          }}
+        />
         <div className="border-t border-gray-200 pt-3">
           <div className="flex justify-between">
             <span className="font-bold text-emerald-700">Utilidad operativa</span>
             <span className="text-xl font-bold text-emerald-700">
-              {formatReporteCurrency(data.utilidadOperativa)}
+              {formatReporteCurrency(data.utilidadOperativa ?? 0)}
             </span>
           </div>
           <p className="mt-1 text-right text-sm text-gray-500">
