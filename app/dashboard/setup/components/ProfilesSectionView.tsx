@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { Plus, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
 import {
   canCreateProfile,
   getRemainingProfiles,
@@ -14,11 +12,14 @@ import {
 import type { GetProfilesResponse } from "@/lib/types/profiles";
 import type { GetSubscriptionResponse } from "@/lib/types/subscription";
 import { ProfilesTable } from "./ProfilesTable";
+import { ProfilesUsageMeter } from "./ProfilesUsageMeter";
 
 export interface ProfilesSectionViewProps {
   profiles: GetProfilesResponse;
   subscription: GetSubscriptionResponse;
 }
+
+type UsageTone = "default" | "info" | "warning" | "error";
 
 export function ProfilesSectionView({
   profiles,
@@ -31,11 +32,12 @@ export function ProfilesSectionView({
   const remaining = getRemainingProfiles(currentCount, plan, subscription);
   const limit = getProfileLimit(plan, subscription);
   const recommendedPlan = getRecommendedUpgradePlan(plan);
+  const limitMessage = getProfileLimitMessage(plan, subscription);
 
   const usagePercentage =
     limit === Infinity ? 0 : Math.min(100, (currentCount / limit) * 100);
 
-  const warningLevel =
+  const warningLevel: UsageTone | null =
     limit === Infinity
       ? null
       : usagePercentage >= 100
@@ -46,105 +48,90 @@ export function ProfilesSectionView({
             ? "info"
             : null;
 
+  const meterTone: UsageTone = warningLevel ?? "default";
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
           <h2 className="text-2xl font-semibold">Perfiles RFC</h2>
           <p className="text-muted-foreground mt-1">
             Gestiona tus perfiles fiscales (RFCs)
           </p>
         </div>
-        <Link href="/dashboard/setup/profiles/new">
-          <Button disabled={!canCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Crear Perfil
-          </Button>
-        </Link>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <ProfilesUsageMeter
+            currentCount={currentCount}
+            limit={limit}
+            usagePercentage={usagePercentage}
+            limitMessage={limitMessage}
+            tone={meterTone}
+          />
+          <Link href="/dashboard/setup/profiles/new" className="sm:shrink-0">
+            <Button disabled={!canCreate} className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Crear Perfil
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {limit !== Infinity ? (
+      {warningLevel && (
         <Alert
           className={
             warningLevel === "error"
               ? "border-red-500 bg-red-50 dark:bg-red-950/20"
               : warningLevel === "warning"
                 ? "border-orange-500 bg-orange-50 dark:bg-orange-950/20"
-                : warningLevel === "info"
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                  : "border-border"
+                : "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
           }
         >
           <AlertCircle
-            className={`h-4 w-4 ${
+            className={
               warningLevel === "error"
-                ? "text-red-600"
+                ? "h-4 w-4 text-red-600"
                 : warningLevel === "warning"
-                  ? "text-orange-600"
-                  : warningLevel === "info"
-                    ? "text-blue-600"
-                    : "text-muted-foreground"
-            }`}
+                  ? "h-4 w-4 text-orange-600"
+                  : "h-4 w-4 text-blue-600"
+            }
           />
           <AlertTitle>Uso de Perfiles</AlertTitle>
-          <AlertDescription className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>
-                {currentCount} / {limit} perfiles utilizados
-              </span>
-              <span className="font-medium">{Math.round(usagePercentage)}%</span>
-            </div>
-            <Progress value={usagePercentage} className="h-2" />
+          <AlertDescription className="space-y-1">
             {warningLevel === "error" && (
               <p className="text-sm font-medium">
                 Has alcanzado el límite de tu plan.{" "}
                 {recommendedPlan && (
                   <Link
                     href="/dashboard/setup?tab=subscription"
-                    className="text-primary hover:underline inline-flex items-center gap-1"
+                    className="text-primary inline-flex items-center gap-1 hover:underline"
                   >
-                    Actualiza a {recommendedPlan} <Sparkles className="h-4 w-4" />
+                    Actualiza a {recommendedPlan}{" "}
+                    <Sparkles className="h-4 w-4" />
                   </Link>
                 )}
               </p>
             )}
             {warningLevel === "warning" && remaining !== null && remaining > 0 && (
               <p className="text-sm">
-                Te quedan {remaining} perfil{remaining !== 1 ? "es" : ""} disponibles en tu plan
-                actual.
+                Te quedan {remaining} perfil{remaining !== 1 ? "es" : ""}{" "}
+                disponibles.
                 {recommendedPlan && (
                   <Link
                     href="/dashboard/setup?tab=subscription"
-                    className="text-primary hover:underline ml-1 inline-flex items-center gap-1"
+                    className="text-primary ml-1 inline-flex items-center gap-1 hover:underline"
                   >
-                    Considera actualizar tu plan <Sparkles className="h-4 w-4" />
+                    Considera actualizar tu plan{" "}
+                    <Sparkles className="h-4 w-4" />
                   </Link>
                 )}
               </p>
             )}
             {warningLevel === "info" && remaining !== null && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Te quedan {remaining} perfiles disponibles en tu plan actual.
               </p>
             )}
-            {!warningLevel && remaining !== null && remaining > 0 && (
-              <p className="text-sm text-muted-foreground">
-                Te quedan {remaining} perfiles disponibles en tu plan actual.
-              </p>
-            )}
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <Alert className="border-border">
-          <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          <AlertTitle>Uso de Perfiles</AlertTitle>
-          <AlertDescription>
-            <div className="flex items-center justify-between text-sm">
-              <span>{currentCount} perfiles utilizados</span>
-              <Badge variant="outline" className="ml-2">
-                {getProfileLimitMessage(plan, subscription)}
-              </Badge>
-            </div>
           </AlertDescription>
         </Alert>
       )}

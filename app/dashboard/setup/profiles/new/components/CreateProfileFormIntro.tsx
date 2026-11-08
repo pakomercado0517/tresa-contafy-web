@@ -28,15 +28,6 @@ export function CreateProfileFormIntro({
 }: CreateProfileFormIntroProps) {
   return (
     <div>
-      <h2 className="mb-2 text-2xl font-bold">
-        {currentProfileCount === 0 ? 'Da de alta tu primer RFC' : 'Crear nuevo perfil RFC'}
-      </h2>
-      <p className="text-muted-foreground mb-3">
-        {currentProfileCount === 0
-          ? 'Ingresa los datos fiscales para comenzar a administrar tus facturas y clientes de forma eficiente.'
-          : 'Agrega un nuevo perfil fiscal para gestionar múltiples empresas.'}
-      </p>
-
       <div className="mb-4 flex items-center gap-2">
         <Badge variant="outline" className="text-xs">
           {getProfileLimitMessage(plan, subscription)}

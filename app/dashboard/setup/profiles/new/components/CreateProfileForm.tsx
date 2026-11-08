@@ -2,6 +2,7 @@
 
 import type { Plan, Subscription } from '@/lib/types/subscription';
 import { useCreateProfileForm } from './use-create-profile-form';
+import { CreateProfileCsfUpload } from './CreateProfileCsfUpload';
 import { CreateProfileFormIntro } from './CreateProfileFormIntro';
 import { CreateProfileTipoPersonaSelector } from './CreateProfileTipoPersonaSelector';
 import { CreateProfileIdentityFields } from './CreateProfileIdentityFields';
@@ -19,6 +20,11 @@ export function CreateProfileForm(props: CreateProfileFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit} className="space-y-6">
+      <CreateProfileCsfUpload
+        disabled={!form.canCreate || form.isLoading}
+        onParsed={form.applyCsfData}
+      />
+
       <CreateProfileFormIntro
         currentProfileCount={form.currentProfileCount}
         plan={form.plan}
@@ -32,6 +38,7 @@ export function CreateProfileForm(props: CreateProfileFormProps) {
       <CreateProfileTipoPersonaSelector
         tipoPersona={form.tipoPersona}
         onChange={form.handleTipoPersonaChange}
+        isFromCsf={Boolean(form.csfPrefill?.tipoPersona)}
       />
 
       <CreateProfileIdentityFields
@@ -39,6 +46,8 @@ export function CreateProfileForm(props: CreateProfileFormProps) {
         onNombreChange={form.setNombre}
         rfc={form.rfc}
         onRfcChange={form.setRfc}
+        isNombreFromCsf={Boolean(form.csfPrefill?.nombre)}
+        isRfcFromCsf={Boolean(form.csfPrefill?.rfc)}
       />
 
       <CreateProfileRegimenesField
@@ -50,6 +59,8 @@ export function CreateProfileForm(props: CreateProfileFormProps) {
         regimenesOptions={form.regimenesOptions}
         availableToAdd={form.availableToAdd}
         isLoadingRegimenes={form.isLoadingRegimenes}
+        isFromCsf={Boolean(form.csfPrefill?.regimenes)}
+        regimenesSinMatch={form.regimenesSinMatch}
       />
 
       {form.error && (
