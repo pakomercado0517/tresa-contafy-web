@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -10,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { CsfPrefillBadge } from './CsfPrefillBadge';
 
 interface RegimenCatalogItem {
   clave: string;
@@ -25,6 +27,8 @@ interface CreateProfileRegimenesFieldProps {
   regimenesOptions: RegimenCatalogItem[];
   availableToAdd: RegimenCatalogItem[];
   isLoadingRegimenes: boolean;
+  isFromCsf?: boolean;
+  regimenesSinMatch?: string[];
 }
 
 export function CreateProfileRegimenesField({
@@ -36,13 +40,18 @@ export function CreateProfileRegimenesField({
   regimenesOptions,
   availableToAdd,
   isLoadingRegimenes,
+  isFromCsf = false,
+  regimenesSinMatch = [],
 }: CreateProfileRegimenesFieldProps) {
   const regimenLabel =
     regimenesFiscales.length !== 1 ? 'Régimenes Fiscales' : 'Régimen Fiscal';
 
   return (
     <div className="space-y-2">
-      <Label>{regimenLabel}</Label>
+      <div className="flex items-center gap-2">
+        <Label>{regimenLabel}</Label>
+        {isFromCsf && <CsfPrefillBadge />}
+      </div>
       <p className="text-muted-foreground text-xs">
         Selecciona los regímenes que aplican a este perfil. Puedes agregar varios.
       </p>
@@ -83,7 +92,10 @@ export function CreateProfileRegimenesField({
             return (
               <span
                 key={clave}
-                className="bg-primary/10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm"
+                className={cn(
+                  'bg-primary/10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm',
+                  isFromCsf && 'ring-primary/25 ring-1'
+                )}
               >
                 {label}
                 <button
@@ -99,6 +111,32 @@ export function CreateProfileRegimenesField({
           })}
         </div>
       )}
+
+      {regimenesSinMatch.length > 0 && (
+        <div
+          className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-100"
+          role="status"
+        >
+          <div className="flex items-start gap-2">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-medium">
+                Detectamos régimen{regimenesSinMatch.length > 1 ? 'es' : ''} en la CSF que no
+                reconocimos
+              </p>
+              <ul className="list-inside list-disc text-xs opacity-90">
+                {regimenesSinMatch.map((description) => (
+                  <li key={description}>{description}</li>
+                ))}
+              </ul>
+              <p className="text-xs opacity-90">
+                Agrégalos manualmente desde el catálogo si aplican a este perfil.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isLoadingRegimenes && (
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />

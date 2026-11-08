@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     // Templates y skills de agentes (no son código de la app)
     ".agents/**",
     ".cursor/skills/**",
+    // Assets estáticos / vendors minificados (no código de la app)
+    "public/**",
   ]),
 ]);
 

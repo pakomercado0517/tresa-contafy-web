@@ -3,12 +3,16 @@
 import { HelpCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { CsfPrefillBadge } from './CsfPrefillBadge';
 
 interface CreateProfileIdentityFieldsProps {
   nombre: string;
   onNombreChange: (value: string) => void;
   rfc: string;
   onRfcChange: (value: string) => void;
+  isNombreFromCsf?: boolean;
+  isRfcFromCsf?: boolean;
 }
 
 export function CreateProfileIdentityFields({
@@ -16,11 +20,16 @@ export function CreateProfileIdentityFields({
   onNombreChange,
   rfc,
   onRfcChange,
+  isNombreFromCsf = false,
+  isRfcFromCsf = false,
 }: CreateProfileIdentityFieldsProps) {
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="nombre">Nombre o Razón Social</Label>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="nombre">Nombre o Razón Social</Label>
+          {isNombreFromCsf && <CsfPrefillBadge />}
+        </div>
         <Input
           id="nombre"
           type="text"
@@ -30,12 +39,16 @@ export function CreateProfileIdentityFields({
           required
           minLength={2}
           maxLength={255}
+          className={cn(isNombreFromCsf && 'border-primary/40 ring-primary/20 ring-1')}
         />
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="rfc">RFC</Label>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="rfc">RFC</Label>
+            {isRfcFromCsf && <CsfPrefillBadge />}
+          </div>
           <a
             href="https://www.sat.gob.mx/aplicacion/operacion/31274/consulta-tu-clave-de-rfc-con-la-curp"
             target="_blank"
@@ -56,6 +69,7 @@ export function CreateProfileIdentityFields({
           minLength={12}
           maxLength={13}
           pattern="[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}"
+          className={cn(isRfcFromCsf && 'border-primary/40 ring-primary/20 ring-1')}
         />
         <p className="text-muted-foreground text-xs">
           Introduce los 12 o 13 caracteres de tu homoclave.

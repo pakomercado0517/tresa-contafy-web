@@ -11,12 +11,22 @@ import {
   getProfileLimit,
   getRecommendedUpgradePlan,
 } from '@/lib/utils/subscription';
+import type { ParsedCsfData } from '@/lib/csf';
 import type { Plan, Subscription } from '@/lib/types/subscription';
+
+const SETUP_PATH = '/dashboard/setup';
 
 interface UseCreateProfileFormOptions {
   currentProfileCount: number;
   plan: Plan;
   subscription?: Subscription | null;
+}
+
+export interface CsfPrefillFlags {
+  nombre: boolean;
+  rfc: boolean;
+  tipoPersona: boolean;
+  regimenes: boolean;
 }
 
 export function useCreateProfileForm({
@@ -26,10 +36,12 @@ export function useCreateProfileForm({
 }: UseCreateProfileFormOptions) {
   const router = useRouter();
   const [tipoPersona, setTipoPersona] = useState<'FISICA' | 'MORAL'>('FISICA');
-  const [nombre, setNombre] = useState('');
-  const [rfc, setRfc] = useState('');
+  const [nombre, setNombreState] = useState('');
+  const [rfc, setRfcState] = useState('');
   const [regimenesFiscales, setRegimenesFiscales] = useState<string[]>([]);
   const [regimenToAdd, setRegimenToAdd] = useState('');
+  const [regimenesSinMatch, setRegimenesSinMatch] = useState<string[]>([]);
+  const [csfPrefill, setCsfPrefill] = useState<CsfPrefillFlags | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,23 +62,58 @@ export function useCreateProfileForm({
   const limit = getProfileLimit(plan, subscription);
   const recommendedPlan = getRecommendedUpgradePlan(plan);
 
+  const clearPrefillFlag = (flag: keyof CsfPrefillFlags) => {
+    setCsfPrefill((prev) => (prev ? { ...prev, [flag]: false } : prev));
+  };
+
+  const setNombre = (value: string) => {
+    setNombreState(value);
+    clearPrefillFlag('nombre');
+  };
+
+  const setRfc = (value: string) => {
+    setRfcState(value);
+    clearPrefillFlag('rfc');
+  };
+
   const handleAddRegimen = () => {
     if (regimenToAdd && !regimenesFiscales.includes(regimenToAdd)) {
       setRegimenesFiscales((prev) => [...prev, regimenToAdd].sort());
       setRegimenToAdd('');
+      clearPrefillFlag('regimenes');
     }
   };
 
   const handleRemoveRegimen = (clave: string) => {
     setRegimenesFiscales((prev) => prev.filter((c) => c !== clave));
+    clearPrefillFlag('regimenes');
   };
 
   const handleTipoPersonaChange = (nuevoTipo: 'FISICA' | 'MORAL') => {
     if (nuevoTipo === tipoPersona) return;
-    const nextTipo = nuevoTipo;
-    setTipoPersona(nextTipo);
+    setTipoPersona(nuevoTipo);
     setRegimenesFiscales([]);
     setRegimenToAdd('');
+    setRegimenesSinMatch([]);
+    setCsfPrefill((prev) =>
+      prev ? { ...prev, tipoPersona: false, regimenes: false } : prev
+    );
+  };
+
+  const applyCsfData = (data: ParsedCsfData) => {
+    setError(null);
+    setTipoPersona(data.tipoPersona);
+    setNombreState(data.nombre);
+    setRfcState(data.rfc.toUpperCase());
+    setRegimenesFiscales([...data.regimenesFiscales].sort());
+    setRegimenToAdd('');
+    setRegimenesSinMatch([...data.regimenesSinMatch]);
+    setCsfPrefill({
+      nombre: true,
+      rfc: true,
+      tipoPersona: true,
+      regimenes: data.regimenesFiscales.length > 0,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -89,7 +136,7 @@ export function useCreateProfileForm({
         return;
       }
 
-      router.push('/dashboard/setup');
+      router.push(SETUP_PATH);
     } catch {
       setError('Error al crear el perfil. Intenta nuevamente.');
       setIsLoading(false);
@@ -97,7 +144,7 @@ export function useCreateProfileForm({
   };
 
   const handleCancel = () => {
-    router.push('/dashboard/setup/profiles');
+    router.push(SETUP_PATH);
   };
 
   const isSubmitDisabled = isLoading || !nombre || !rfc || !canCreate;
@@ -120,6 +167,8 @@ export function useCreateProfileForm({
     regimenesOptions,
     availableToAdd,
     isLoadingRegimenes,
+    regimenesSinMatch,
+    csfPrefill,
     canCreate,
     remainingProfiles,
     limit,
@@ -128,6 +177,7 @@ export function useCreateProfileForm({
     isLoading,
     handleSubmit,
     handleCancel,
+    applyCsfData,
     isSubmitDisabled,
   };
 }

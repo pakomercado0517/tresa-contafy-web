@@ -15,7 +15,7 @@ import type { Subscription } from '@/lib/types/subscription';
 import { getProfileDeleteErrorMessage } from './profiles-table-utils';
 import { fetchProfilesExportPayload } from './profiles-table-export';
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 10;
 
 interface UseProfilesTableOptions {
   profiles: Profile[];
