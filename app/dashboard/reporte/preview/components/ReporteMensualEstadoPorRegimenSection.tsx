@@ -1,9 +1,9 @@
 'use client';
 
 import { BarChart3 } from 'lucide-react';
-import { PRODUCT_FEATURES } from '@/lib/constants/product-features';
 import type { EstadoPorRegimen } from './reporte-mensual-types';
 import { formatReporteCurrency } from './reporte-mensual-format';
+import { ReporteImpuestosIngresosEgresosGrid } from './ReporteImpuestosIngresosEgresosGrid';
 
 interface ReporteMensualEstadoPorRegimenSectionProps {
   estadoPorRegimen: EstadoPorRegimen[];
@@ -16,41 +16,27 @@ function RegimenResultCard({ regimen }: { regimen: EstadoPorRegimen }) {
         <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
         <h4 className="text-sm font-bold text-gray-900">{regimen.nombreRegimen}</h4>
       </div>
-      <div className="space-y-2 p-4">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Ingresos (cobrados / devengados)</span>
-          <span className="font-medium text-gray-900">{formatReporteCurrency(regimen.ingresos)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Egresos (pagados / deducidos)</span>
-          <span className="font-medium text-red-600">({formatReporteCurrency(regimen.egresos)})</span>
-        </div>
-        {PRODUCT_FEATURES.taxEstimate ? (
-          <>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Retenciones de terceros (IVA)</span>
-              <span className="font-medium text-gray-900">
-                {formatReporteCurrency(regimen.retencionesIva)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Retenciones de terceros (ISR)</span>
-              <span className="font-medium text-gray-900">
-                {formatReporteCurrency(regimen.retencionesIsr)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Impuesto trasladado</span>
-              <span className="font-medium text-gray-900">
-                {formatReporteCurrency(regimen.impuestoTrasladado)}
-              </span>
-            </div>
-          </>
-        ) : null}
+      <div className="space-y-3 p-4">
+        <ReporteImpuestosIngresosEgresosGrid
+          ingresos={{
+            total: regimen.ingresos ?? 0,
+            totalLabel: 'Ingresos (cobrados / devengados)',
+            impuestoTrasladado: regimen.impuestoTrasladado ?? 0,
+            retencionesIva: regimen.retencionesIva ?? 0,
+            retencionesIsr: regimen.retencionesIsr ?? 0,
+          }}
+          egresos={{
+            total: regimen.egresos ?? 0,
+            totalLabel: 'Egresos (pagados / deducidos)',
+            ivaAcreditable: regimen.ivaAcreditable ?? 0,
+            retencionesIva: regimen.retencionesIvaEgresos ?? 0,
+            retencionesIsr: regimen.retencionesIsrEgresos ?? 0,
+          }}
+        />
         <div className="flex justify-between border-t border-gray-200 pt-3">
           <span className="font-bold text-emerald-700">Utilidad neta del régimen</span>
           <span className="text-lg font-bold text-emerald-700">
-            {formatReporteCurrency(regimen.utilidadNeta)}
+            {formatReporteCurrency(regimen.utilidadNeta ?? 0)}
           </span>
         </div>
       </div>

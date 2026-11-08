@@ -1,5 +1,7 @@
-export function formatReporteCurrency(amount: number): string {
-  return `$${amount.toLocaleString('es-MX', {
+export function formatReporteCurrency(amount: number | null | undefined): string {
+  const safeAmount =
+    typeof amount === 'number' && Number.isFinite(amount) ? amount : 0;
+  return `$${safeAmount.toLocaleString('es-MX', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
